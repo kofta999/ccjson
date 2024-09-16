@@ -57,3 +57,4 @@ mod tests {
         assert_eq!(Vec::<Token>::new(), tokenize(&invalid));
     }
 }
+

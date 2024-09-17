@@ -1,21 +1,11 @@
-#[derive(Debug, PartialEq)]
-pub enum TokenType {
+#[derive(Debug, PartialEq, Eq)]
+pub enum Token {
     OpenCurlyBrace,
     CloseCurlyBrace,
     DoubleQuote,
     Colon,
-    String,
+    String(String),
     Comma,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Token {
-    pub value: String,
-    pub token_type: TokenType,
-}
-
-fn create_token(value: String, token_type: TokenType) -> Token {
-    Token { value, token_type }
 }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
@@ -23,16 +13,13 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut chars = input.chars();
     while let Some(char) = chars.next() {
         let token_type = match char {
-            '{' => TokenType::OpenCurlyBrace,
-            '}' => TokenType::CloseCurlyBrace,
-            ':' => TokenType::Colon,
-            ',' => TokenType::Comma,
+            '{' => Token::OpenCurlyBrace,
+            '}' => Token::CloseCurlyBrace,
+            ':' => Token::Colon,
+            ',' => Token::Comma,
             ' ' | '\n' | '\r' | '\t' => continue,
             '"' => {
-                tokens.push(Token {
-                    value: '"'.to_string(),
-                    token_type: TokenType::DoubleQuote,
-                });
+                tokens.push(Token::DoubleQuote);
 
                 let mut s = String::new();
 
@@ -44,9 +31,9 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                     }
                 }
 
-                tokens.push(create_token(s, TokenType::String));
+                tokens.push(Token::String(s));
 
-                TokenType::DoubleQuote
+                Token::DoubleQuote
             }
             t => {
                 let err_msg = format!("Lexer Error: Unexpected Token {t}");
@@ -54,7 +41,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             }
         };
 
-        tokens.push(create_token(char.to_string(), token_type));
+        tokens.push(token_type);
     }
 
     Ok(tokens)
@@ -72,10 +59,7 @@ mod tests {
         let invalid = fs::read_to_string("./tests/step1/invalid.json").unwrap();
 
         assert_eq!(
-            vec![
-                create_token("{".to_string(), TokenType::OpenCurlyBrace),
-                create_token("}".to_string(), TokenType::CloseCurlyBrace),
-            ],
+            vec![Token::OpenCurlyBrace, Token::CloseCurlyBrace],
             tokenize(&valid).unwrap()
         );
 
@@ -89,31 +73,31 @@ mod tests {
 
         assert_eq!(
             vec![
-                create_token("{".to_string(), TokenType::OpenCurlyBrace),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token("key".to_string(), TokenType::String),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token(":".to_string(), TokenType::Colon),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token("value".to_string(), TokenType::String),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token("}".to_string(), TokenType::CloseCurlyBrace),
+                Token::OpenCurlyBrace,
+                Token::DoubleQuote,
+                Token::String(String::from("key")),
+                Token::DoubleQuote,
+                Token::Colon,
+                Token::DoubleQuote,
+                Token::String(String::from("value")),
+                Token::DoubleQuote,
+                Token::CloseCurlyBrace,
             ],
             tokenize(&valid).unwrap()
         );
 
         assert_eq!(
             vec![
-                create_token("{".to_string(), TokenType::OpenCurlyBrace),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token("key".to_string(), TokenType::String),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token(":".to_string(), TokenType::Colon),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token("value".to_string(), TokenType::String),
-                create_token('"'.to_string(), TokenType::DoubleQuote),
-                create_token(",".to_string(), TokenType::Comma),
-                create_token("}".to_string(), TokenType::CloseCurlyBrace),
+                Token::OpenCurlyBrace,
+                Token::DoubleQuote,
+                Token::String(String::from("key")),
+                Token::DoubleQuote,
+                Token::Colon,
+                Token::DoubleQuote,
+                Token::String(String::from("value")),
+                Token::DoubleQuote,
+                Token::Comma,
+                Token::CloseCurlyBrace,
             ],
             tokenize(&invalid).unwrap()
         );

@@ -1,6 +1,5 @@
-use std::cell::RefCell;
-
-use crate::lexer::{tokenize, Token, TokenType};
+use crate::lexer::Token;
+use std::{cell::RefCell, mem};
 
 pub struct Parser {
     cursor: RefCell<usize>,
@@ -33,8 +32,8 @@ impl Parser {
         }
     }
 
-    fn expect(&self, token_type: TokenType) -> Result<(), &str> {
-        if self.eat()?.token_type != token_type {
+    fn expect(&self, token_type: Token) -> Result<(), &str> {
+        if mem::discriminant(self.eat()?) != mem::discriminant(&token_type) {
             return Err("Unexpected Token");
         }
 
@@ -42,32 +41,32 @@ impl Parser {
     }
 
     pub fn parse(&self) -> Result<(), &str> {
-        self.expect(TokenType::OpenCurlyBrace)?;
+        self.expect(Token::OpenCurlyBrace)?;
         // Do parsing for content
 
-        if self.at()?.token_type == TokenType::DoubleQuote {
+        if self.at()? == &Token::DoubleQuote {
             self.parse_kv_pair()?;
         }
 
-        self.expect(TokenType::CloseCurlyBrace)?;
+        self.expect(Token::CloseCurlyBrace)?;
         Ok(())
     }
 
     fn parse_kv_pair(&self) -> Result<(), &str> {
         self.eat()?;
 
-        self.expect(TokenType::String)?;
-        self.expect(TokenType::DoubleQuote)?;
+        self.expect(Token::String(String::new()))?;
+        self.expect(Token::DoubleQuote)?;
 
         println!("here");
 
-        self.expect(TokenType::Colon)?;
+        self.expect(Token::Colon)?;
 
-        self.expect(TokenType::DoubleQuote)?;
-        self.expect(TokenType::String)?;
-        self.expect(TokenType::DoubleQuote)?;
+        self.expect(Token::DoubleQuote)?;
+        self.expect(Token::String(String::new()))?;
+        self.expect(Token::DoubleQuote)?;
 
-        if self.at()?.token_type == TokenType::Comma {
+        if self.at()? == &Token::Comma {
             self.eat()?;
             self.parse_kv_pair()?;
         }
@@ -78,9 +77,9 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-
     use super::*;
+    use crate::lexer::tokenize;
+    use std::fs;
 
     #[test]
     fn test_parser_step1() {

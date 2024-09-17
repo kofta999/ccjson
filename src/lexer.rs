@@ -13,10 +13,6 @@ pub enum Token {
     Null,
 }
 
-// fn is_alpha(s: &str) -> bool {
-//     s.to_uppercase() != s.to_lowercase()
-// }
-
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut chars = input.chars().peekable();
@@ -41,67 +37,6 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
 
                 Token::String(s)
             }
-            // TODO: Make this better
-            'n' => {
-                let mut s = String::from(char);
-
-                while let Some(c) = chars.peek() {
-                    if s == "null" {
-                        break;
-                    } else {
-                        s.push(*c);
-                        chars.next();
-                    }
-                }
-
-                if s != "null" {
-                    let err_msg = format!("Lexer Error: Unexpected Token {s}");
-                    return Err(err_msg);
-                } else {
-                    Token::Null
-                }
-            }
-
-            't' => {
-                let mut s = String::from(char);
-
-                while let Some(c) = chars.peek() {
-                    if s == "true" {
-                        break;
-                    } else {
-                        s.push(*c);
-                        chars.next();
-                    }
-                }
-
-                if s != "true" {
-                    let err_msg = format!("Lexer Error: Unexpected Token {s}");
-                    return Err(err_msg);
-                } else {
-                    Token::Boolean(true)
-                }
-            }
-
-            'f' => {
-                let mut s = String::from(char);
-
-                while let Some(c) = chars.peek() {
-                    if s == "false" {
-                        break;
-                    } else {
-                        s.push(*c);
-                        chars.next();
-                    }
-                }
-
-                if s != "false" {
-                    let err_msg = format!("Lexer Error: Unexpected Token {s}");
-                    return Err(err_msg);
-                } else {
-                    Token::Boolean(false)
-                }
-            }
-
             '0'..='9' => {
                 let mut s = String::from(char);
 
@@ -117,8 +52,26 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 Token::Number(s.parse::<usize>().expect("This should never be reached"))
             }
             t => {
-                let err_msg = format!("Lexer Error: Unexpected Token {t}");
-                return Err(err_msg);
+                let mut s = String::from(t);
+
+                while let Some(c) = chars.peek() {
+                    if !c.is_alphabetic() {
+                        break;
+                    } else {
+                        s.push(*c);
+                        chars.next();
+                    }
+                }
+
+                match s.as_str() {
+                    "true" => Token::Boolean(true),
+                    "false" => Token::Boolean(false),
+                    "null" => Token::Null,
+                    t => {
+                        let err_msg = format!("Lexer Error: Unexpected Token {t}");
+                        return Err(err_msg);
+                    }
+                }
             }
         };
 

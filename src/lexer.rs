@@ -3,6 +3,8 @@ pub enum Token {
     // Symbols
     OpenCurlyBrace,
     CloseCurlyBrace,
+    OpenBracket,
+    CloseBracket,
     Colon,
     Comma,
 
@@ -23,6 +25,8 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             '}' => Token::CloseCurlyBrace,
             ':' => Token::Colon,
             ',' => Token::Comma,
+            '[' => Token::OpenBracket,
+            ']' => Token::CloseBracket,
             ' ' | '\n' | '\r' | '\t' => continue,
             '"' => {
                 let mut s = String::new();
@@ -167,5 +171,40 @@ mod tests {
         assert_eq!(expected_tokens, tokenize(&valid).unwrap());
 
         assert!(tokenize(&invalid).is_err());
+    }
+
+    #[test]
+    fn test_lexer_step4() {
+        let valid = r#"
+        {
+            "key": "value",
+            "key-n": 101,
+            "key-o": {
+                "inner key": "inner value"
+            }
+        }
+        "#;
+
+        let expected_tokens = vec![
+            Token::OpenCurlyBrace,
+            Token::String(String::from("key")),
+            Token::Colon,
+            Token::String(String::from("value")),
+            Token::Comma,
+            Token::String(String::from("key-n")),
+            Token::Colon,
+            Token::Number(101),
+            Token::Comma,
+            Token::String(String::from("key-o")),
+            Token::Colon,
+            Token::OpenCurlyBrace,
+            Token::String(String::from("inner key")),
+            Token::Colon,
+            Token::String(String::from("inner value")),
+            Token::CloseCurlyBrace,
+            Token::CloseCurlyBrace,
+        ];
+
+        assert_eq!(expected_tokens, tokenize(valid).unwrap());
     }
 }

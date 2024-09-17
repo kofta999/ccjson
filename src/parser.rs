@@ -48,7 +48,7 @@ impl Parser {
         self.expect(Token::OpenCurlyBrace)?;
         // Do parsing for content
 
-        if eq_enum(self.at()?, &Token::DoubleQuote) {
+        if eq_enum(self.at()?, &Token::String(String::new())) {
             self.parse_kv_pair()?;
         }
 
@@ -57,20 +57,12 @@ impl Parser {
     }
 
     fn parse_kv_pair(&self) -> Result<(), &str> {
-        self.eat()?;
-
         self.expect(Token::String(String::new()))?;
-        self.expect(Token::DoubleQuote)?;
 
         self.expect(Token::Colon)?;
 
         match self.eat()? {
-            // TODO: remove double quote token as there's no need for plain string in JSON
-            // Token::String(_) => (),
-            Token::DoubleQuote => {
-                self.expect(Token::String(String::new()))?;
-                self.expect(Token::DoubleQuote)?;
-            }
+            Token::String(_) => (),
             Token::Number(_) => (),
             Token::Boolean(_) => (),
             Token::Null => (),
@@ -133,5 +125,9 @@ mod tests {
         assert!(parser.parse().is_ok());
 
         // Invalid won't be used as it tests the lexer only
+        // let invalid = fs::read_to_string("./tests/step3/invalid.json").unwrap();
+        // let invalid_tokens = tokenize(&invalid).unwrap();
+        // let parser = Parser::new(invalid_tokens);
+        // assert!(parser.parse().is_err());
     }
 }

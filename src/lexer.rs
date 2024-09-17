@@ -3,7 +3,6 @@ pub enum Token {
     // Symbols
     OpenCurlyBrace,
     CloseCurlyBrace,
-    DoubleQuote,
     Colon,
     Comma,
 
@@ -30,8 +29,6 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             ',' => Token::Comma,
             ' ' | '\n' | '\r' | '\t' => continue,
             '"' => {
-                tokens.push(Token::DoubleQuote);
-
                 let mut s = String::new();
 
                 while let Some(c) = chars.next() {
@@ -42,9 +39,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                     }
                 }
 
-                tokens.push(Token::String(s));
-
-                Token::DoubleQuote
+                Token::String(s)
             }
             // TODO: Make this better
             'n' => {
@@ -160,13 +155,9 @@ mod tests {
         assert_eq!(
             vec![
                 Token::OpenCurlyBrace,
-                Token::DoubleQuote,
                 Token::String(String::from("key")),
-                Token::DoubleQuote,
                 Token::Colon,
-                Token::DoubleQuote,
                 Token::String(String::from("value")),
-                Token::DoubleQuote,
                 Token::CloseCurlyBrace,
             ],
             tokenize(&valid).unwrap()
@@ -175,13 +166,9 @@ mod tests {
         assert_eq!(
             vec![
                 Token::OpenCurlyBrace,
-                Token::DoubleQuote,
                 Token::String(String::from("key")),
-                Token::DoubleQuote,
                 Token::Colon,
-                Token::DoubleQuote,
                 Token::String(String::from("value")),
-                Token::DoubleQuote,
                 Token::Comma,
                 Token::CloseCurlyBrace,
             ],
@@ -202,35 +189,23 @@ mod tests {
 
         let expected_tokens = vec![
             Token::OpenCurlyBrace,
-            Token::DoubleQuote,
             Token::String(String::from("key1")),
-            Token::DoubleQuote,
             Token::Colon,
             Token::Boolean(true),
             Token::Comma,
-            Token::DoubleQuote,
             Token::String(String::from("key2")),
-            Token::DoubleQuote,
             Token::Colon,
             Token::Boolean(false),
             Token::Comma,
-            Token::DoubleQuote,
             Token::String(String::from("key3")),
-            Token::DoubleQuote,
             Token::Colon,
             Token::Null,
             Token::Comma,
-            Token::DoubleQuote,
             Token::String(String::from("key4")),
-            Token::DoubleQuote,
             Token::Colon,
-            Token::DoubleQuote,
             Token::String(String::from("value")),
-            Token::DoubleQuote,
             Token::Comma,
-            Token::DoubleQuote,
             Token::String(String::from("key5")),
-            Token::DoubleQuote,
             Token::Colon,
             Token::Number(101),
             Token::CloseCurlyBrace,

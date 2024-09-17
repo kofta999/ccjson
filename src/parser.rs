@@ -47,12 +47,18 @@ impl Parser {
     pub fn parse(&self) -> Result<(), &str> {
         self.expect(Token::OpenCurlyBrace)?;
         // Do parsing for content
+        self.parse_inside()?;
 
+        self.expect(Token::CloseCurlyBrace)?;
+        Ok(())
+    }
+
+    fn parse_inside(&self) -> Result<(), &str> {
         if eq_enum(self.at()?, &Token::String(String::new())) {
+            println!("tes");
             self.parse_kv_pair()?;
         }
 
-        self.expect(Token::CloseCurlyBrace)?;
         Ok(())
     }
 
@@ -66,6 +72,10 @@ impl Parser {
             Token::Number(_) => (),
             Token::Boolean(_) => (),
             Token::Null => (),
+            Token::OpenCurlyBrace => {
+                self.parse_inside()?;
+                self.expect(Token::CloseCurlyBrace)?;
+            }
             _ => return Err("Unexpected token"),
         }
 
@@ -129,5 +139,15 @@ mod tests {
         // let invalid_tokens = tokenize(&invalid).unwrap();
         // let parser = Parser::new(invalid_tokens);
         // assert!(parser.parse().is_err());
+    }
+
+    #[test]
+    fn test_parser_step4() {
+        let valid = fs::read_to_string("./tests/step4/valid.json").unwrap();
+        let valid_tokens = tokenize(&valid).unwrap();
+        let parser = Parser::new(valid_tokens);
+        let s = parser.parse();
+        s.unwrap();
+        assert!(s.is_ok());
     }
 }

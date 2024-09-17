@@ -6,6 +6,10 @@ pub struct Parser {
     tokens: Vec<Token>,
 }
 
+fn eq_enum<T>(a: &T, b: &T) -> bool {
+    mem::discriminant(a) == mem::discriminant(b)
+}
+
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
         Parser {
@@ -33,7 +37,7 @@ impl Parser {
     }
 
     fn expect(&self, token_type: Token) -> Result<(), &str> {
-        if mem::discriminant(self.eat()?) != mem::discriminant(&token_type) {
+        if !eq_enum(self.eat()?, &token_type) {
             return Err("Unexpected Token");
         }
 
@@ -44,7 +48,7 @@ impl Parser {
         self.expect(Token::OpenCurlyBrace)?;
         // Do parsing for content
 
-        if self.at()? == &Token::DoubleQuote {
+        if eq_enum(self.at()?, &Token::DoubleQuote) {
             self.parse_kv_pair()?;
         }
 
@@ -58,13 +62,20 @@ impl Parser {
         self.expect(Token::String(String::new()))?;
         self.expect(Token::DoubleQuote)?;
 
-        println!("here");
-
         self.expect(Token::Colon)?;
 
-        self.expect(Token::DoubleQuote)?;
-        self.expect(Token::String(String::new()))?;
-        self.expect(Token::DoubleQuote)?;
+        match self.eat()? {
+            // TODO: remove double quote token as there's no need for plain string in JSON
+            // Token::String(_) => (),
+            Token::DoubleQuote => {
+                self.expect(Token::String(String::new()))?;
+                self.expect(Token::DoubleQuote)?;
+            }
+            Token::Number(_) => (),
+            Token::Boolean(_) => (),
+            Token::Null => (),
+            _ => return Err("Unexpected token"),
+        }
 
         if self.at()? == &Token::Comma {
             self.eat()?;
@@ -112,5 +123,15 @@ mod tests {
         assert!(parser.parse().is_ok());
 
         // invalid2 won't be used as it tests the lexer only
+    }
+
+    #[test]
+    fn test_parser_step3() {
+        let valid = fs::read_to_string("./tests/step3/valid.json").unwrap();
+        let valid_tokens = tokenize(&valid).unwrap();
+        let parser = Parser::new(valid_tokens);
+        assert!(parser.parse().is_ok());
+
+        // Invalid won't be used as it tests the lexer only
     }
 }

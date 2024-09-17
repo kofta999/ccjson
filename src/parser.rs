@@ -8,9 +8,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(input: &str) -> Parser {
-        let tokens = tokenize(input);
-
+    pub fn new(tokens: Vec<Token>) -> Parser {
         Parser {
             cursor: RefCell::new(0),
             tokens,
@@ -87,35 +85,33 @@ mod tests {
     #[test]
     fn test_parser_step1() {
         let valid = fs::read_to_string("./tests/step1/valid.json").unwrap();
-
-        let parser1 = Parser::new(&valid);
-
+        let valid_tokens = tokenize(&valid).unwrap();
+        let parser1 = Parser::new(valid_tokens);
         assert!(parser1.parse().is_ok());
 
         let invalid = fs::read_to_string("./tests/step1/invalid.json").unwrap();
-
-        let parser2 = Parser::new(&invalid);
-
+        let invalid_tokens = tokenize(&invalid).unwrap();
+        let parser2 = Parser::new(invalid_tokens);
         assert!(parser2.parse().is_err());
     }
 
     #[test]
     fn test_parser_step2() {
         let valid = fs::read_to_string("./tests/step2/valid.json").unwrap();
+        let valid_tokens = tokenize(&valid).unwrap();
+        let parser = Parser::new(valid_tokens);
+        assert!(parser.parse().is_ok());
+
         let invalid = fs::read_to_string("./tests/step2/invalid.json").unwrap();
+        let invalid_tokens = tokenize(&invalid).unwrap();
+        let parser = Parser::new(invalid_tokens);
+        assert!(parser.parse().is_err());
+
         let valid2 = fs::read_to_string("./tests/step2/valid2.json").unwrap();
-        let invalid2 = fs::read_to_string("./tests/step2/invalid2.json").unwrap();
-
-        let parser = Parser::new(&valid);
+        let valid2_tokens = tokenize(&valid2).unwrap();
+        let parser = Parser::new(valid2_tokens);
         assert!(parser.parse().is_ok());
 
-        let parser = Parser::new(&invalid);
-        assert!(parser.parse().is_err());
-
-        let parser = Parser::new(&valid2);
-        assert!(parser.parse().is_ok());
-
-        let parser = Parser::new(&invalid2);
-        assert!(parser.parse().is_err());
+        // invalid2 won't be used as it tests the lexer only
     }
 }

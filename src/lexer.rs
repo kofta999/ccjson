@@ -18,13 +18,16 @@ fn create_token(value: String, token_type: TokenType) -> Token {
     Token { value, token_type }
 }
 
-pub fn tokenize(input: &str) -> Vec<Token> {
+pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut chars = input.chars();
     while let Some(char) = chars.next() {
         let token_type = match char {
             '{' => TokenType::OpenCurlyBrace,
             '}' => TokenType::CloseCurlyBrace,
+            ':' => TokenType::Colon,
+            ',' => TokenType::Comma,
+            ' ' | '\n' | '\r' | '\t' => continue,
             '"' => {
                 tokens.push(Token {
                     value: '"'.to_string(),
@@ -45,15 +48,16 @@ pub fn tokenize(input: &str) -> Vec<Token> {
 
                 TokenType::DoubleQuote
             }
-            ':' => TokenType::Colon,
-            ',' => TokenType::Comma,
-            _ => continue,
+            t => {
+                let err_msg = format!("Lexer Error: Unexpected Token {t}");
+                return Err(err_msg);
+            }
         };
 
         tokens.push(create_token(char.to_string(), token_type));
     }
 
-    tokens
+    Ok(tokens)
 }
 
 #[cfg(test)]
@@ -72,10 +76,10 @@ mod tests {
                 create_token("{".to_string(), TokenType::OpenCurlyBrace),
                 create_token("}".to_string(), TokenType::CloseCurlyBrace),
             ],
-            tokenize(&valid)
+            tokenize(&valid).unwrap()
         );
 
-        assert_eq!(Vec::<Token>::new(), tokenize(&invalid));
+        assert_eq!(Vec::<Token>::new(), tokenize(&invalid).unwrap());
     }
 
     #[test]
@@ -95,7 +99,7 @@ mod tests {
                 create_token('"'.to_string(), TokenType::DoubleQuote),
                 create_token("}".to_string(), TokenType::CloseCurlyBrace),
             ],
-            tokenize(&valid)
+            tokenize(&valid).unwrap()
         );
 
         assert_eq!(
@@ -111,7 +115,13 @@ mod tests {
                 create_token(",".to_string(), TokenType::Comma),
                 create_token("}".to_string(), TokenType::CloseCurlyBrace),
             ],
-            tokenize(&invalid)
+            tokenize(&invalid).unwrap()
         );
+
+        let valid = fs::read_to_string("./tests/step2/valid2.json").unwrap();
+        let invalid = fs::read_to_string("./tests/step2/invalid2.json").unwrap();
+
+        assert!(tokenize(&valid).is_ok());
+        assert!(tokenize(&invalid).is_err());
     }
 }

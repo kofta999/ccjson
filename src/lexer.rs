@@ -1,16 +1,27 @@
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
+    // Symbols
     OpenCurlyBrace,
     CloseCurlyBrace,
     DoubleQuote,
     Colon,
-    String(String),
     Comma,
+
+    // Types
+    String(String),
+    Number(usize),
+    Boolean(bool),
+    Null,
 }
+
+// fn is_alpha(s: &str) -> bool {
+//     s.to_uppercase() != s.to_lowercase()
+// }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
-    let mut chars = input.chars();
+    let mut chars = input.chars().peekable();
+
     while let Some(char) = chars.next() {
         let token_type = match char {
             '{' => Token::OpenCurlyBrace,
@@ -34,6 +45,81 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 tokens.push(Token::String(s));
 
                 Token::DoubleQuote
+            }
+            // TODO: Make this better
+            'n' => {
+                let mut s = String::from(char);
+
+                while let Some(c) = chars.peek() {
+                    if s == "null" {
+                        break;
+                    } else {
+                        s.push(*c);
+                        chars.next();
+                    }
+                }
+
+                if s != "null" {
+                    let err_msg = format!("Lexer Error: Unexpected Token {s}");
+                    return Err(err_msg);
+                } else {
+                    Token::Null
+                }
+            }
+
+            't' => {
+                let mut s = String::from(char);
+
+                while let Some(c) = chars.peek() {
+                    if s == "true" {
+                        break;
+                    } else {
+                        s.push(*c);
+                        chars.next();
+                    }
+                }
+
+                if s != "true" {
+                    let err_msg = format!("Lexer Error: Unexpected Token {s}");
+                    return Err(err_msg);
+                } else {
+                    Token::Boolean(true)
+                }
+            }
+
+            'f' => {
+                let mut s = String::from(char);
+
+                while let Some(c) = chars.peek() {
+                    if s == "false" {
+                        break;
+                    } else {
+                        s.push(*c);
+                        chars.next();
+                    }
+                }
+
+                if s != "false" {
+                    let err_msg = format!("Lexer Error: Unexpected Token {s}");
+                    return Err(err_msg);
+                } else {
+                    Token::Boolean(false)
+                }
+            }
+
+            '0'..='9' => {
+                let mut s = String::from(char);
+
+                while let Some(c) = chars.peek() {
+                    if !c.is_numeric() {
+                        break;
+                    } else {
+                        s.push(*c);
+                        chars.next();
+                    }
+                }
+
+                Token::Number(s.parse::<usize>().expect("This should never be reached"))
             }
             t => {
                 let err_msg = format!("Lexer Error: Unexpected Token {t}");
@@ -106,6 +192,52 @@ mod tests {
         let invalid = fs::read_to_string("./tests/step2/invalid2.json").unwrap();
 
         assert!(tokenize(&valid).is_ok());
+        assert!(tokenize(&invalid).is_err());
+    }
+
+    #[test]
+    fn test_lexer_step3() {
+        let valid = fs::read_to_string("./tests/step3/valid.json").unwrap();
+        let invalid = fs::read_to_string("./tests/step3/invalid.json").unwrap();
+
+        let expected_tokens = vec![
+            Token::OpenCurlyBrace,
+            Token::DoubleQuote,
+            Token::String(String::from("key1")),
+            Token::DoubleQuote,
+            Token::Colon,
+            Token::Boolean(true),
+            Token::Comma,
+            Token::DoubleQuote,
+            Token::String(String::from("key2")),
+            Token::DoubleQuote,
+            Token::Colon,
+            Token::Boolean(false),
+            Token::Comma,
+            Token::DoubleQuote,
+            Token::String(String::from("key3")),
+            Token::DoubleQuote,
+            Token::Colon,
+            Token::Null,
+            Token::Comma,
+            Token::DoubleQuote,
+            Token::String(String::from("key4")),
+            Token::DoubleQuote,
+            Token::Colon,
+            Token::DoubleQuote,
+            Token::String(String::from("value")),
+            Token::DoubleQuote,
+            Token::Comma,
+            Token::DoubleQuote,
+            Token::String(String::from("key5")),
+            Token::DoubleQuote,
+            Token::Colon,
+            Token::Number(101),
+            Token::CloseCurlyBrace,
+        ];
+
+        assert_eq!(expected_tokens, tokenize(&valid).unwrap());
+
         assert!(tokenize(&invalid).is_err());
     }
 }

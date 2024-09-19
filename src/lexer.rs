@@ -54,7 +54,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                         s.push(*peek);
                         chars.next();
                     } else {
-                        return Err("Lexer Error: Illigal backslash escape".into());
+                        return Err("Lexer Error: Illegal backslash escape".into());
                     }
                 }
 
@@ -64,10 +64,6 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 let mut s = String::from(char);
                 let mut has_frac = false;
                 let mut has_e = false;
-
-                // If '-' then it's a negative, won't do anything
-                // If '0' then it MUST be a fraction (followed by a .) or only 0
-                // else a normal number (check for E / e)
 
                 if char == '0' {
                     if let Some(c) = chars.peek() {
@@ -145,11 +141,9 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             }
         };
 
-        // println!("{:?}", tokens);
         tokens.push(token_type);
     }
 
-    println!("{:?}", tokens);
     Ok(tokens)
 }
 

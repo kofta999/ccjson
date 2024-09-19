@@ -18,45 +18,50 @@ impl Parser {
         }
     }
 
-    fn at(&self) -> Result<&Token, &str> {
+    fn at(&self) -> Result<&Token, String> {
         match self.tokens.get(*self.cursor.borrow()) {
             Some(t) => Ok(t),
-            None => Err("Invalid JSON"),
+            None => Err("Should Never be reached (Tokens Array Ended)".into()),
         }
     }
 
-    fn eat(&self) -> Result<&Token, &str> {
+    fn eat(&self) -> Result<&Token, String> {
         let mut cursor = self.cursor.borrow_mut();
         match self.tokens.get(*cursor) {
             Some(t) => {
                 *cursor += 1;
                 Ok(t)
             }
-            None => Err("Invalid Token"),
+            None => Err("Should Never be reached (Tokens Array Ended)".into()),
         }
     }
 
-    fn expect(&self, token_type: Token) -> Result<(), &str> {
-        if !eq_enum(self.eat()?, &token_type) {
-            return Err("Unexpected Token");
+    fn expect(&self, token_type: Token) -> Result<(), String> {
+        let eaten = self.eat()?;
+        if !eq_enum(eaten, &token_type) {
+            let err_msg = format!(
+                "Parser Error: Expected: {:?}, Found: {:?}",
+                eaten, &token_type
+            );
+            return Err(err_msg);
         }
 
         Ok(())
     }
 
-    pub fn parse(&self) -> Result<(), &str> {
+    pub fn parse(&self) -> Result<(), String> {
         if eq_enum(self.at()?, &Token::OpenCurlyBrace) {
             self.parse_object()?;
         } else if eq_enum(self.at()?, &Token::OpenBracket) {
             self.parse_array()?;
         } else {
-            return Err("Invalid JSON");
+            return Err("Parse Error: Invalid JSON. Neither an Object or an Array".into());
         }
 
         Ok(())
     }
 
-    fn parse_array(&self) -> Result<(), &str> {
+    fn parse_array(&self) -> Result<(), String> {
         self.expect(Token::OpenBracket)?;
 
         self.parse_inner_array()?;
@@ -65,7 +70,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_inner_array(&self) -> Result<(), &str> {
+    fn parse_inner_array(&self) -> Result<(), String> {
         if !eq_enum(self.at()?, &Token::CloseBracket) {
             self.parse_value()?;
         }
@@ -77,7 +82,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_object(&self) -> Result<(), &str> {
+    fn parse_object(&self) -> Result<(), String> {
         self.expect(Token::OpenCurlyBrace)?;
 
         self.parse_inner_object()?;
@@ -86,7 +91,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_inner_object(&self) -> Result<(), &str> {
+    fn parse_inner_object(&self) -> Result<(), String> {
         if eq_enum(self.at()?, &Token::String(String::new())) {
             self.parse_kv_pair()?;
         }
@@ -94,7 +99,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_kv_pair(&self) -> Result<(), &str> {
+    fn parse_kv_pair(&self) -> Result<(), String> {
         self.expect(Token::String(String::new()))?;
         self.expect(Token::Colon)?;
         self.parse_value()?;
@@ -107,7 +112,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_value(&self) -> Result<(), &str> {
+    fn parse_value(&self) -> Result<(), String> {
         match self.eat()? {
             Token::String(_) => (),
             Token::Number(_) => (),
@@ -121,7 +126,7 @@ impl Parser {
                 self.parse_inner_array()?;
                 self.expect(Token::CloseBracket)?;
             }
-            _ => return Err("Unexpected token"),
+            _ => return Err("Parser Error: Unknown Token".into()),
         }
 
         Ok(())

@@ -20,6 +20,9 @@ fn test_valid_json() {
             assert!(run(&content).is_ok(), "Failed on file: {:?}", path);
         }
     }
+
+    let file = fs::read_to_string("./tests/final/sample.json").unwrap();
+    assert!(run(&file).is_ok());
 }
 
 #[test]

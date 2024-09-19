@@ -30,18 +30,31 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             ' ' | '\n' | '\r' | '\t' => continue,
             '"' => {
                 let mut s = String::new();
+                let allowed_escapes = ['"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u'];
+                let invalid_escapes = ['\t', '\n'];
 
                 while let Some(c) = chars.next() {
                     if c == '"' {
                         break;
-                    } else {
+                    }
+
+                    if invalid_escapes.contains(&c) {
+                        return Err("Lexer Error: Unescaped Characters".into());
+                    }
+
+                    if (c.is_ascii() && c != '\\')
+                        || (c == '\\' && allowed_escapes.contains(&chars.peek().unwrap()))
+                    {
+                        println!("{c}");
                         s.push(c);
+                    } else {
+                        return Err("Lexer Error: Illigal backslash escape".into());
                     }
                 }
 
                 Token::String(s)
             }
-            '0'..='9' => {
+            '1'..='9' => {
                 let mut s = String::from(char);
 
                 while let Some(c) = chars.peek() {
@@ -82,6 +95,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
         tokens.push(token_type);
     }
 
+    println!("{:?}", tokens);
     Ok(tokens)
 }
 

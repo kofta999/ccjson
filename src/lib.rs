@@ -1,23 +1,14 @@
-use std::process;
-
 use lexer::tokenize;
 use parser::Parser;
 
 mod lexer;
 pub mod parser;
 
-pub fn run(input: &str) {
-    let tokens = tokenize(&input).unwrap_or_else(|err| {
-        eprintln!("{err}");
-        process::exit(1)
-    });
-
+pub fn run(input: &str) -> Result<(), String> {
+    let tokens = tokenize(&input)?;
     let parser = Parser::new(tokens);
 
-    parser.parse().unwrap_or_else(|err| {
-        eprintln!("{err}");
-        process::exit(1)
-    });
+    parser.parse()?;
 
-    process::exit(0);
+    Ok(())
 }

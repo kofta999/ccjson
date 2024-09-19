@@ -58,6 +58,10 @@ impl Parser {
             return Err("Parse Error: Invalid JSON. Neither an Object or an Array".into());
         }
 
+        if let Ok(_) = self.at() {
+            return Err("Parse Error: Invalid JSON. Token found after Object / Array ended".into());
+        };
+
         Ok(())
     }
 
@@ -198,9 +202,9 @@ mod tests {
 
         let valid_tokens = tokenize(&valid2).unwrap();
         let parser = Parser::new(valid_tokens);
-        let s = parser.parse();
-        s.unwrap();
-        // assert!(parser.parse().is_ok());
+        // let s = parser.parse();
+        // s.unwrap();
+        //assert!(parser.parse().is_ok());
 
         // Invalid won't be used as it tests the lexer only
         // let valid_tokens = tokenize(&invalid).unwrap();

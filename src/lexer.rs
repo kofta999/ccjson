@@ -34,11 +34,6 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 let invalid_escapes = ['\t', '\n'];
 
                 while let Some(c) = chars.next() {
-                    let peek = match chars.peek() {
-                        Some(v) => v,
-                        None => break,
-                    };
-
                     if c == '"' {
                         break;
                     }
@@ -47,14 +42,21 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                         return Err("Lexer Error: Unescaped Characters".into());
                     }
 
-                    if c.is_ascii() && c != '\\' {
-                        s.push(c);
-                    } else if c.is_ascii() && c == '\\' && allowed_escapes.contains(peek) {
-                        s.push(c);
-                        s.push(*peek);
-                        chars.next();
+                    if c == '\\' {
+                        let peek = match chars.peek() {
+                            Some(v) => v,
+                            None => break,
+                        };
+                        if allowed_escapes.contains(peek) {
+                            s.push(c);
+                            s.push(*peek);
+                            chars.next();
+                        } else {
+                            println!("{s} {c}");
+                            return Err("Lexer Error: Illegal backslash escape".into());
+                        }
                     } else {
-                        return Err("Lexer Error: Illegal backslash escape".into());
+                        s.push(c);
                     }
                 }
 
@@ -239,7 +241,7 @@ mod tests {
     fn test_lexer_step4() {
         let valid = r#"
         {
-            "key": "value",
+            "key": "تيست",
             "key-n": 101,
             "key-o": {
                 "inner key": "inner value"
@@ -251,7 +253,7 @@ mod tests {
             Token::OpenCurlyBrace,
             Token::String(String::from("key")),
             Token::Colon,
-            Token::String(String::from("value")),
+            Token::String(String::from("تيست")),
             Token::Comma,
             Token::String(String::from("key-n")),
             Token::Colon,

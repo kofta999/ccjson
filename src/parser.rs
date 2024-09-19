@@ -53,7 +53,6 @@ impl Parser {
         if eq_enum(self.at()?, &Token::OpenCurlyBrace) {
             self.parse_object()?;
         } else if eq_enum(self.at()?, &Token::OpenBracket) {
-            println!("Parsing arary");
             self.parse_array()?;
         } else {
             return Err("Parse Error: Invalid JSON. Neither an Object or an Array".into());
@@ -122,8 +121,6 @@ impl Parser {
     }
 
     fn parse_value(&self) -> Result<(), String> {
-        println!("CURR: {:?}", self.at()?);
-
         match self.eat()? {
             Token::String(_) => (),
             Token::Number(_) => (),

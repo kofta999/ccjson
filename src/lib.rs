@@ -5,10 +5,23 @@ mod lexer;
 pub mod parser;
 
 pub fn run(input: &str) -> Result<(), String> {
-    let tokens = tokenize(&input)?;
+    let tokens = match tokenize(&input) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {e}");
+            return Err(e);
+        }
+    };
+
     let parser = Parser::new(tokens);
 
-    parser.parse()?;
+    match parser.parse() {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("ERROR: {e}");
+            return Err(e);
+        }
+    }
 
     Ok(())
 }

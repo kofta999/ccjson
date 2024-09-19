@@ -53,6 +53,7 @@ impl Parser {
         if eq_enum(self.at()?, &Token::OpenCurlyBrace) {
             self.parse_object()?;
         } else if eq_enum(self.at()?, &Token::OpenBracket) {
+            println!("Parsing arary");
             self.parse_array()?;
         } else {
             return Err("Parse Error: Invalid JSON. Neither an Object or an Array".into());
@@ -75,12 +76,16 @@ impl Parser {
     }
 
     fn parse_inner_array(&self) -> Result<(), String> {
-        if !eq_enum(self.at()?, &Token::CloseBracket) {
-            self.parse_value()?;
+        if eq_enum(self.at()?, &Token::CloseBracket) {
+            return Ok(());
         }
 
-        if eq_enum(self.at()?, &Token::Comma) {
-            self.parse_inner_array()?;
+        loop {
+            self.parse_value()?;
+            if eq_enum(self.at()?, &Token::CloseBracket) {
+                break;
+            }
+            self.expect(Token::Comma)?;
         }
 
         Ok(())
@@ -117,6 +122,8 @@ impl Parser {
     }
 
     fn parse_value(&self) -> Result<(), String> {
+        println!("CURR: {:?}", self.at()?);
+
         match self.eat()? {
             Token::String(_) => (),
             Token::Number(_) => (),
@@ -130,7 +137,7 @@ impl Parser {
                 self.parse_inner_array()?;
                 self.expect(Token::CloseBracket)?;
             }
-            _ => return Err("Parser Error: Unknown Token".into()),
+            t => return Err(format!("Parser Error: Unknown Token {t:?}")),
         }
 
         Ok(())
@@ -202,9 +209,7 @@ mod tests {
 
         let valid_tokens = tokenize(&valid2).unwrap();
         let parser = Parser::new(valid_tokens);
-        // let s = parser.parse();
-        // s.unwrap();
-        //assert!(parser.parse().is_ok());
+        assert!(parser.parse().is_ok());
 
         // Invalid won't be used as it tests the lexer only
         // let valid_tokens = tokenize(&invalid).unwrap();

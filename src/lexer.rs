@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
     // Symbols
     OpenCurlyBrace,
@@ -10,7 +10,7 @@ pub enum Token {
 
     // Types
     String(String),
-    Number(usize),
+    Number(f64),
     Boolean(bool),
     Null,
 }
@@ -34,6 +34,11 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 let invalid_escapes = ['\t', '\n'];
 
                 while let Some(c) = chars.next() {
+                    let peek = match chars.peek() {
+                        Some(v) => v,
+                        None => break,
+                    };
+
                     if c == '"' {
                         break;
                     }
@@ -42,11 +47,12 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                         return Err("Lexer Error: Unescaped Characters".into());
                     }
 
-                    if (c.is_ascii() && c != '\\')
-                        || (c == '\\' && allowed_escapes.contains(&chars.peek().unwrap()))
-                    {
-                        println!("{c}");
+                    if c.is_ascii() && c != '\\' {
                         s.push(c);
+                    } else if c.is_ascii() && c == '\\' && allowed_escapes.contains(peek) {
+                        s.push(c);
+                        s.push(*peek);
+                        chars.next();
                     } else {
                         return Err("Lexer Error: Illigal backslash escape".into());
                     }
@@ -54,11 +60,58 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
 
                 Token::String(s)
             }
-            '1'..='9' => {
+            '-' | '0'..='9' => {
                 let mut s = String::from(char);
+                let mut has_frac = false;
+                let mut has_e = false;
 
+                // If '-' then it's a negative, won't do anything
+                // If '0' then it MUST be a fraction (followed by a .) or only 0
+                // else a normal number (check for E / e)
+
+                if char == '0' {
+                    if let Some(c) = chars.peek() {
+                        if c.is_numeric() {
+                            return Err(
+                                "Lexer Error: Numbers should never start with 0 except zero".into(),
+                            );
+                        }
+                    }
+                }
                 while let Some(c) = chars.peek() {
-                    if !c.is_numeric() {
+                    if *c == '.' {
+                        if has_frac {
+                            return Err("Lexer Error: There only should be 1 decimal point".into());
+                        }
+                        has_frac = true;
+
+                        s.push(*c);
+                        chars.next();
+                    } else if *c == 'e' || *c == 'E' {
+                        if has_e {
+                            return Err("Lexer Error: There only should be 1 exponential".into());
+                        }
+                        has_e = true;
+
+                        // Push e | E and go to next char
+                        s.push(*c);
+                        chars.next();
+
+                        let mut next = chars.next().expect("alo");
+
+                        if next == '+' || next == '-' {
+                            s.push(next);
+                            next = chars.next().expect("alo");
+                        }
+
+                        if !next.is_numeric() {
+                            return Err(
+                                    "Lexer Error: There must be a + or - sign or a number after exponential".into(),
+                                );
+                        }
+
+                        s.push(next);
+                    } else if !c.is_numeric() {
                         break;
                     } else {
                         s.push(*c);
@@ -66,7 +119,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                     }
                 }
 
-                Token::Number(s.parse::<usize>().expect("This should never be reached"))
+                Token::Number(s.parse::<f64>().expect("This should never be reached"))
             }
             t => {
                 let mut s = String::from(t);
@@ -92,6 +145,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             }
         };
 
+        // println!("{:?}", tokens);
         tokens.push(token_type);
     }
 
@@ -178,7 +232,7 @@ mod tests {
             Token::Comma,
             Token::String(String::from("key5")),
             Token::Colon,
-            Token::Number(101),
+            Token::Number(101.0),
             Token::CloseCurlyBrace,
         ];
 
@@ -207,7 +261,7 @@ mod tests {
             Token::Comma,
             Token::String(String::from("key-n")),
             Token::Colon,
-            Token::Number(101),
+            Token::Number(101.0),
             Token::Comma,
             Token::String(String::from("key-o")),
             Token::Colon,
